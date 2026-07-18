@@ -61,6 +61,19 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Database and runtime data
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+data/
+
+# Uploaded files
+uploads/
+
+# Vector database
+chroma/
+
 # Flask stuff:
 instance/
 .webassets-cache
