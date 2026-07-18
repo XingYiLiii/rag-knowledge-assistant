@@ -86,6 +86,7 @@ class Document(TimestampMixin, Base):
     )
     original_name: Mapped[str] = mapped_column(String(255), nullable=False)
     stored_name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    storage_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     file_type: Mapped[str] = mapped_column(String(32), nullable=False)
     file_size: Mapped[int] = mapped_column(BigInteger, nullable=False)
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)

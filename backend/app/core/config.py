@@ -1,6 +1,7 @@
 """Environment-based application configuration."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field
@@ -17,6 +18,8 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = Field(default=8000, ge=1, le=65535)
     database_url: str = "sqlite:///./data/rag_knowledge_assistant.db"
+    upload_directory: Path = Path("./data/uploads")
+    max_upload_file_size: int = Field(default=10 * 1024 * 1024, ge=1)
 
     model_config = SettingsConfigDict(
         env_file=".env",
