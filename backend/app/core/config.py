@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     app_debug: bool = False
     app_host: str = "0.0.0.0"
     app_port: int = Field(default=8000, ge=1, le=65535)
+    database_url: str = "sqlite:///./data/rag_knowledge_assistant.db"
 
     model_config = SettingsConfigDict(
         env_file=".env",
