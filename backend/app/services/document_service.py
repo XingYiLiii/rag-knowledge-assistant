@@ -30,6 +30,8 @@ class DocumentResult:
     file_size: int
     sha256: str
     status: DocumentStatus
+    chunk_count: int
+    error_message: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -87,6 +89,17 @@ class DocumentService:
                 message="The document could not be uploaded.",
                 status_code=500,
             ) from exc
+
+    def get(self, document_id: UUID) -> DocumentResult:
+        """Return document processing status or a safe 404 error."""
+        document = self._session.get(Document, document_id)
+        if document is None:
+            raise ApplicationError(
+                code="DOCUMENT_NOT_FOUND",
+                message="Document was not found.",
+                status_code=404,
+            )
+        return self._to_result(document)
 
     def _get_knowledge_base_or_raise(self, knowledge_base_id: UUID) -> KnowledgeBase:
         knowledge_base = self._session.get(KnowledgeBase, knowledge_base_id)
@@ -157,6 +170,8 @@ class DocumentService:
             file_size=document.file_size,
             sha256=document.sha256,
             status=document.status,
+            chunk_count=document.chunk_count,
+            error_message=document.error_message,
             created_at=document.created_at,
             updated_at=document.updated_at,
         )

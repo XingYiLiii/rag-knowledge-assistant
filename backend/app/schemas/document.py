@@ -20,5 +20,7 @@ class DocumentRead(BaseModel):
     file_size: int
     sha256: str
     status: DocumentStatus
+    chunk_count: int
+    error_message: str | None
     created_at: datetime
     updated_at: datetime
