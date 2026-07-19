@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/rag_knowledge_assistant.db"
     upload_directory: Path = Path("./data/uploads")
     max_upload_file_size: int = Field(default=10 * 1024 * 1024, ge=1)
+    chunk_size: int = Field(default=1000, gt=0)
+    chunk_overlap: int = Field(default=200, ge=0)
 
     model_config = SettingsConfigDict(
         env_file=".env",
