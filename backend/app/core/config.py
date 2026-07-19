@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     max_upload_file_size: int = Field(default=10 * 1024 * 1024, ge=1)
     chunk_size: int = Field(default=1000, gt=0)
     chunk_overlap: int = Field(default=200, ge=0)
+    embedding_base_url: str = "https://api.openai.com/v1"
+    embedding_api_key: SecretStr | None = None
+    embedding_model: str = "text-embedding-3-small"
+    embedding_timeout_seconds: float = Field(default=20.0, gt=0)
 
     model_config = SettingsConfigDict(
         env_file=".env",
