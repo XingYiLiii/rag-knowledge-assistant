@@ -71,6 +71,28 @@ class ChromaVectorStore:
             if page_content is not None
         ]
 
+    def similarity_search_with_distances(
+        self, query_embedding: Sequence[float], *, limit: int = 4
+    ) -> list[tuple[Document, float]]:
+        """Return raw Chroma cosine distances without applying retrieval policy."""
+        if limit <= 0:
+            raise ValueError("limit must be greater than zero.")
+        results = self._collection.query(
+            query_embeddings=[list(query_embedding)],
+            n_results=limit,
+            include=["documents", "metadatas", "distances"],
+        )
+        documents = results.get("documents", [[]])[0] or []
+        metadatas = results.get("metadatas", [[]])[0] or []
+        distances = results.get("distances", [[]])[0] or []
+        return [
+            (Document(page_content=page_content, metadata=metadata or {}), float(distance))
+            for page_content, metadata, distance in zip(
+                documents, metadatas, distances, strict=True
+            )
+            if page_content is not None and distance is not None
+        ]
+
     def count(self) -> int:
         """Return the number of vectors in this knowledge base collection."""
         return self._collection.count()

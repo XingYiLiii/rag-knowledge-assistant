@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_timeout_seconds: float = Field(default=20.0, gt=0)
     chroma_persist_directory: Path = Path("./data/chroma")
+    retrieval_top_k: int = Field(default=4, gt=0, le=100)
+    retrieval_score_threshold: float = Field(default=0.35, ge=-1.0, le=1.0)
 
     model_config = SettingsConfigDict(
         env_file=".env",
