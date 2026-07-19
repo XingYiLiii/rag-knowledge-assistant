@@ -1,0 +1,66 @@
+[
+  {
+    "question": "How do I deploy the project?",
+    "expected_document": "deployment.md",
+    "expected_keywords": ["docker", "compose"]
+  },
+  {
+    "question": "Which environment variables configure the chat model?",
+    "expected_document": "configuration.md",
+    "expected_keywords": ["LLM_MODEL", "LLM_API_KEY"]
+  },
+  {
+    "question": "Which file formats can users upload?",
+    "expected_document": "uploads.md",
+    "expected_keywords": ["PDF", "DOCX", "Markdown", "TXT"]
+  },
+  {
+    "question": "How are citation snapshots saved in conversation history?",
+    "expected_document": "conversations.md",
+    "expected_keywords": ["citations_json", "assistant"]
+  },
+  {
+    "question": "What happens when no relevant knowledge is retrieved?",
+    "expected_document": "rag-behavior.md",
+    "expected_keywords": ["No relevant knowledge", "LLM"]
+  },
+  {
+    "question": "How is prompt injection handled for retrieved documents?",
+    "expected_document": "security.md",
+    "expected_keywords": ["untrusted", "system instructions"]
+  },
+  {
+    "question": "Where are SQLite, uploads, and Chroma data persisted in Docker?",
+    "expected_document": "docker.md",
+    "expected_keywords": ["sqlite_data", "uploads_data", "chroma_data"]
+  },
+  {
+    "question": "How can a failed document be reindexed?",
+    "expected_document": "documents.md",
+    "expected_keywords": ["reindex", "processing"]
+  },
+  {
+    "question": "Which sources explain deployment failure troubleshooting?",
+    "expected_document": "deployment.md",
+    "expected_documents": ["deployment.md", "troubleshooting.md"],
+    "expected_keywords": ["docker", "logs", "compose"]
+  },
+  {
+    "question": "What is the company holiday policy?",
+    "expected_document": null,
+    "expected_keywords": [],
+    "is_unanswerable": true
+  },
+  {
+    "question": "Who is the external payroll vendor?",
+    "expected_document": null,
+    "expected_keywords": [],
+    "is_unanswerable": true
+  },
+  {
+    "question": "What is the office parking allocation process?",
+    "expected_document": null,
+    "expected_keywords": [],
+    "is_unanswerable": true
+  }
+]
