@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Knowledge Bases · RAG Knowledge Assistant{% endblock %}
+{% block page %}knowledge-bases{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Knowledge bases</p>
+      <h1>Manage your RAG knowledge</h1>
+      <p class="muted">Create a knowledge base, then upload source documents for indexing.</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="create-heading">
+    <h2 id="create-heading">Create knowledge base</h2>
+    <form id="create-knowledge-base-form" class="stack-form">
+      <label>
+        Name
+        <input id="knowledge-base-name" name="name" maxlength="120" required>
+      </label>
+      <label>
+        Description <span class="muted">(optional)</span>
+        <textarea id="knowledge-base-description" name="description" maxlength="2000"></textarea>
+      </label>
+      <button type="submit">Create knowledge base</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="knowledge-bases-heading">
+    <div class="section-heading">
+      <h2 id="knowledge-bases-heading">Existing knowledge bases</h2>
+      <button id="refresh-knowledge-bases" class="button-secondary" type="button">Refresh</button>
+    </div>
+    <p id="page-message" class="page-message" role="status"></p>
+    <div id="knowledge-base-list" class="card-grid" aria-live="polite"></div>
+  </section>
+{% endblock %}

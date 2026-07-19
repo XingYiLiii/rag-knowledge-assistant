@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Knowledge Base · RAG Knowledge Assistant{% endblock %}
+{% block page %}knowledge-base-detail{% endblock %}
+
+{% block content %}
+  <a class="back-link" href="/">← All knowledge bases</a>
+  <section class="page-heading" data-knowledge-base-id="{{ knowledge_base_id }}">
+    <div>
+      <p class="eyebrow">Knowledge base</p>
+      <h1 id="knowledge-base-name">Loading…</h1>
+      <p id="knowledge-base-description" class="muted"></p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="upload-heading">
+    <h2 id="upload-heading">Upload document</h2>
+    <p class="muted">Supported formats: PDF, DOCX, Markdown, TXT.</p>
+    <form id="upload-document-form" class="inline-form">
+      <input id="document-file" name="file" type="file" accept=".pdf,.docx,.md,.txt" required>
+      <button type="submit">Upload and index</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="documents-heading">
+    <div class="section-heading">
+      <h2 id="documents-heading">Documents</h2>
+      <button id="refresh-documents" class="button-secondary" type="button">Refresh</button>
+    </div>
+    <p id="page-message" class="page-message" role="status"></p>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Chunks</th>
+            <th>Error</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="document-list" aria-live="polite"></tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

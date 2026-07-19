@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.core.config import get_settings
@@ -17,6 +18,8 @@ from app.core.exceptions import ApplicationError
 from app.core.logging import configure_logging
 from app.core.middleware import RequestIDMiddleware
 from app.database.session import init_db
+from app.web.routes import WEB_DIRECTORY
+from app.web.routes import router as web_router
 
 
 @asynccontextmanager
@@ -41,7 +44,9 @@ def create_app() -> FastAPI:
     app.add_exception_handler(ApplicationError, application_error_handler)
     app.add_exception_handler(RequestValidationError, request_validation_error_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
+    app.mount("/static", StaticFiles(directory=str(WEB_DIRECTORY / "static")), name="static")
     app.include_router(api_router)
+    app.include_router(web_router)
     return app
 
 

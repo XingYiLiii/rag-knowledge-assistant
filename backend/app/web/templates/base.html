@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}RAG Knowledge Assistant{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  </head>
+  <body data-page="{% block page %}{% endblock %}">
+    <header class="site-header">
+      <div class="shell header-content">
+        <a class="brand" href="/">RAG Knowledge Assistant</a>
+        <span class="product-label">Knowledge management</span>
+      </div>
+    </header>
+    <main class="shell">{% block content %}{% endblock %}</main>
+    <script src="{{ url_for('static', path='app.js') }}" defer></script>
+  </body>
+</html>
