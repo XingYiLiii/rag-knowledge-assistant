@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     """Validated settings loaded from environment variables or a local .env file."""
 
     app_name: str = "RAG Knowledge Assistant API"
-    app_version: str = "0.1.0"
+    app_version: str = "1.0.0"
     app_env: Literal["development", "test", "production"] = "development"
     app_debug: bool = False
     app_host: str = "0.0.0.0"

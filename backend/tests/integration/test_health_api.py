@@ -15,5 +15,5 @@ def test_health_endpoint_returns_service_metadata() -> None:
     assert response.json() == {
         "status": "ok",
         "service": "rag-knowledge-assistant",
-        "version": "0.1.0",
+        "version": "1.0.0",
     }
