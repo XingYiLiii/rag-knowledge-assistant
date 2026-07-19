@@ -1,5 +1,29 @@
 # RAG Design and Evaluation
 
+## RAG pipeline
+
+```text
+Upload
+  -> Parse
+  -> Chunk
+  -> Embedding
+  -> Chroma
+  -> Retriever
+  -> Context
+  -> Prompt
+  -> LLM
+  -> Citation
+```
+
+1. A document is uploaded to a selected knowledge base and stored with safe metadata.
+2. Format-specific loaders parse PDF, DOCX, Markdown, or TXT into LangChain `Document` objects.
+3. Text is lightly cleaned and split into stable, metadata-preserving chunks.
+4. The configured OpenAI-compatible Embedding Provider creates vectors and Chroma persists them in a knowledge-base-isolated collection.
+5. `RAGRetriever` embeds a query, applies Top-K, threshold, sorting, and content deduplication.
+6. `ContextBuilder` selects bounded chunks, assigns stable source numbers, and separates sources for the Prompt.
+7. The Prompt places trusted rules only in the System Message. User input and retrieved content remain fenced, untrusted data in the User Message.
+8. The Chat Provider returns an answer. Citations are created only from chunks that entered the context and are saved as conversation snapshots when a `conversation_id` is supplied.
+
 ## Retrieval evaluation
 
 `backend/evals/dataset.json` is a fixed 12-question benchmark. It includes answerable questions, unanswerable questions, and one multi-document source case. Each answerable case names an expected document and expected keywords; keywords are retained for qualitative review and future extensions, while the current automated metrics use source names only.
