@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Chat · RAG Knowledge Assistant{% endblock %}
+{% block page %}chat{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Grounded chat</p>
+      <h1>Ask your knowledge base</h1>
+      <p class="muted">Answers use retrieved evidence and include expandable source snapshots.</p>
+    </div>
+  </section>
+
+  <section class="chat-layout">
+    <aside class="card chat-controls">
+      <label>
+        Knowledge base
+        <select id="chat-knowledge-base" required></select>
+      </label>
+      <label>
+        Conversation
+        <select id="chat-conversation"></select>
+      </label>
+      <button id="new-conversation" class="button-secondary" type="button">New conversation</button>
+      <a class="text-link" href="/history">View full history</a>
+    </aside>
+
+    <section class="card chat-panel" aria-labelledby="chat-heading">
+      <h2 id="chat-heading">Conversation</h2>
+      <p id="page-message" class="page-message" role="status"></p>
+      <div id="chat-messages" class="chat-messages" aria-live="polite"></div>
+      <form id="chat-form" class="chat-form">
+        <label class="sr-only" for="chat-question">Question</label>
+        <textarea id="chat-question" maxlength="2000" placeholder="Ask a question about this knowledge base…" required></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+  </section>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}History · RAG Knowledge Assistant{% endblock %}
+{% block page %}history{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Conversation history</p>
+      <h1>Review saved RAG answers</h1>
+      <p class="muted">Citation snapshots remain attached to assistant messages.</p>
+    </div>
+  </section>
+
+  <section class="history-layout">
+    <aside class="card history-sidebar">
+      <label>
+        Knowledge base
+        <select id="history-knowledge-base" required></select>
+      </label>
+      <div id="conversation-list" class="conversation-list" aria-live="polite"></div>
+    </aside>
+    <section class="card history-panel" aria-labelledby="history-heading">
+      <h2 id="history-heading">Messages</h2>
+      <p id="page-message" class="page-message" role="status"></p>
+      <div id="history-messages" class="chat-messages" aria-live="polite"></div>
+    </section>
+  </section>
+{% endblock %}

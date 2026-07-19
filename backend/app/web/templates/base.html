@@ -10,7 +10,11 @@
     <header class="site-header">
       <div class="shell header-content">
         <a class="brand" href="/">RAG Knowledge Assistant</a>
-        <span class="product-label">Knowledge management</span>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="/">Knowledge bases</a>
+          <a href="/chat">Chat</a>
+          <a href="/history">History</a>
+        </nav>
       </div>
     </header>
     <main class="shell">{% block content %}{% endblock %}</main>
