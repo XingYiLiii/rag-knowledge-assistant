@@ -1,27 +1,30 @@
-"""Business operations for secure local document uploads."""
+"""Business operations for secure document upload and lifecycle management."""
 
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import UploadFile
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ApplicationError
 from app.database.models import Document, DocumentStatus, KnowledgeBase
+from app.rag.vector_store import ChromaVectorStore
 
 SUPPORTED_FILE_TYPES = {".pdf": "pdf", ".docx": "docx", ".md": "markdown", ".txt": "txt"}
+VectorStoreFactory = Callable[[UUID], ChromaVectorStore]
 
 
 @dataclass(frozen=True)
 class DocumentResult:
-    """Service-layer representation of one accepted upload."""
+    """Service-layer representation of a document response."""
 
     id: UUID
     knowledge_base_id: UUID
@@ -36,13 +39,31 @@ class DocumentResult:
     updated_at: datetime
 
 
-class DocumentService:
-    """Persist validated uploads without exposing file-system operations to routes."""
+@dataclass(frozen=True)
+class DocumentPageResult:
+    """Service-layer representation of a paginated document list."""
 
-    def __init__(self, session: Session, *, storage_directory: Path, max_file_size: int) -> None:
+    items: list[DocumentResult]
+    page: int
+    page_size: int
+    total: int
+
+
+class DocumentService:
+    """Coordinate document persistence, storage cleanup, and vector lifecycle operations."""
+
+    def __init__(
+        self,
+        session: Session,
+        *,
+        storage_directory: Path,
+        max_file_size: int,
+        vector_store_factory: VectorStoreFactory,
+    ) -> None:
         self._session = session
         self._storage_directory = storage_directory.resolve()
         self._max_file_size = max_file_size
+        self._vector_store_factory = vector_store_factory
 
     async def upload(self, knowledge_base_id: UUID, uploaded_file: UploadFile) -> DocumentResult:
         """Validate, store, and record an uploaded document atomically as far as possible."""
@@ -54,7 +75,6 @@ class DocumentService:
 
         sha256 = hashlib.sha256(content).hexdigest()
         self._raise_if_duplicate(knowledge_base_id, sha256)
-
         stored_name = f"{uuid4().hex}{suffix}"
         relative_path = Path(str(knowledge_base_id)) / stored_name
         destination = self._resolve_destination(relative_path)
@@ -65,7 +85,6 @@ class DocumentService:
             with destination.open("xb") as output_file:
                 output_file.write(content)
             file_written = True
-
             document = Document(
                 knowledge_base_id=knowledge_base_id,
                 original_name=original_name,
@@ -90,8 +109,89 @@ class DocumentService:
                 status_code=500,
             ) from exc
 
+    def list(self, knowledge_base_id: UUID, *, page: int, page_size: int) -> DocumentPageResult:
+        """List documents belonging to exactly one existing knowledge base."""
+        self._get_knowledge_base_or_raise(knowledge_base_id)
+        total = self._session.scalar(
+            select(func.count(Document.id)).where(Document.knowledge_base_id == knowledge_base_id)
+        )
+        statement = (
+            select(Document)
+            .where(Document.knowledge_base_id == knowledge_base_id)
+            .order_by(Document.created_at.desc(), Document.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        documents = self._session.scalars(statement).all()
+        return DocumentPageResult(
+            items=[self._to_result(document) for document in documents],
+            page=page,
+            page_size=page_size,
+            total=total or 0,
+        )
+
     def get(self, document_id: UUID) -> DocumentResult:
         """Return document processing status or a safe 404 error."""
+        return self._to_result(self._get_document_or_raise(document_id))
+
+    def delete(self, document_id: UUID) -> None:
+        """Delete document vectors, staged local file, and database row with compensation."""
+        document = self._get_document_or_raise(document_id)
+        staged_file = self._stage_local_file(document)
+        vector_store = self._vector_store_factory(document.knowledge_base_id)
+        try:
+            vector_store.delete_documents(document_id=document.id)
+        except Exception as exc:
+            self._restore_staged_file(staged_file)
+            raise ApplicationError(
+                code="DOCUMENT_DELETE_FAILED",
+                message="The document could not be deleted.",
+                status_code=500,
+            ) from exc
+
+        try:
+            self._session.delete(document)
+            self._session.commit()
+        except SQLAlchemyError as exc:
+            self._session.rollback()
+            self._restore_staged_file(staged_file)
+            raise ApplicationError(
+                code="DOCUMENT_DELETE_FAILED",
+                message="The document could not be deleted.",
+                status_code=500,
+            ) from exc
+
+        if staged_file is not None:
+            staged_file.unlink(missing_ok=True)
+
+    def prepare_reindex(self, document_id: UUID) -> DocumentResult:
+        """Remove old vectors and return a ready document to the pending ingestion state."""
+        document = self._get_document_or_raise(document_id)
+        if document.status != DocumentStatus.READY:
+            raise ApplicationError(
+                code="DOCUMENT_REINDEX_NOT_ALLOWED",
+                message="Only ready documents can be reindexed.",
+                status_code=409,
+            )
+        try:
+            self._vector_store_factory(document.knowledge_base_id).delete_documents(
+                document_id=document.id
+            )
+        except Exception as exc:
+            raise ApplicationError(
+                code="DOCUMENT_REINDEX_FAILED",
+                message="Existing document vectors could not be removed.",
+                status_code=500,
+            ) from exc
+
+        document.status = DocumentStatus.PENDING
+        document.chunk_count = 0
+        document.error_message = None
+        self._session.commit()
+        self._session.refresh(document)
+        return self._to_result(document)
+
+    def _get_document_or_raise(self, document_id: UUID) -> Document:
         document = self._session.get(Document, document_id)
         if document is None:
             raise ApplicationError(
@@ -99,7 +199,7 @@ class DocumentService:
                 message="Document was not found.",
                 status_code=404,
             )
-        return self._to_result(document)
+        return document
 
     def _get_knowledge_base_or_raise(self, knowledge_base_id: UUID) -> KnowledgeBase:
         knowledge_base = self._session.get(KnowledgeBase, knowledge_base_id)
@@ -159,6 +259,30 @@ class DocumentService:
                 status_code=400,
             )
         return destination
+
+    def _stage_local_file(self, document: Document) -> Path | None:
+        if not document.storage_path:
+            return None
+        source = self._resolve_destination(Path(document.storage_path))
+        if not source.exists():
+            return None
+        staged_file = source.with_name(f".{source.name}.deleting-{uuid4().hex}")
+        try:
+            source.replace(staged_file)
+        except OSError as exc:
+            raise ApplicationError(
+                code="DOCUMENT_DELETE_FAILED",
+                message="The document file could not be removed.",
+                status_code=500,
+            ) from exc
+        return staged_file
+
+    @staticmethod
+    def _restore_staged_file(staged_file: Path | None) -> None:
+        if staged_file is None or not staged_file.exists():
+            return
+        original_name = staged_file.name.split(".deleting-", maxsplit=1)[0].lstrip(".")
+        staged_file.replace(staged_file.with_name(original_name))
 
     @staticmethod
     def _to_result(document: Document) -> DocumentResult:

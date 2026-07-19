@@ -1,15 +1,19 @@
-"""Business operations for Knowledge Base management."""
+"""Business operations for Knowledge Base management and statistics."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ApplicationError
-from app.database.models import Document, KnowledgeBase
+from app.database.models import Document, DocumentStatus, KnowledgeBase
+from app.rag.vector_store import ChromaVectorStore
+
+VectorStoreFactory = Callable[[UUID], ChromaVectorStore]
 
 
 @dataclass(frozen=True)
@@ -22,6 +26,18 @@ class KnowledgeBaseResult:
     created_at: datetime
     updated_at: datetime
     document_count: int
+
+
+@dataclass(frozen=True)
+class KnowledgeBaseStatsResult:
+    """Aggregated document and vector-store statistics."""
+
+    document_count: int
+    ready_document_count: int
+    processing_document_count: int
+    failed_document_count: int
+    total_chunk_count: int
+    vector_count: int
 
 
 class KnowledgeBaseService:
@@ -59,6 +75,37 @@ class KnowledgeBaseService:
             select(func.count(Document.id)).where(Document.knowledge_base_id == knowledge_base.id)
         )
         return self._to_result(knowledge_base, document_count or 0)
+
+    def stats(
+        self,
+        knowledge_base_id: UUID,
+        *,
+        vector_store_factory: VectorStoreFactory,
+    ) -> KnowledgeBaseStatsResult:
+        """Return document lifecycle counts alongside the isolated vector count."""
+        self._get_entity_or_raise(knowledge_base_id)
+        statement = select(
+            func.count(Document.id),
+            func.coalesce(func.sum(case((Document.status == DocumentStatus.READY, 1), else_=0)), 0),
+            func.coalesce(
+                func.sum(case((Document.status == DocumentStatus.PROCESSING, 1), else_=0)), 0
+            ),
+            func.coalesce(
+                func.sum(case((Document.status == DocumentStatus.FAILED, 1), else_=0)), 0
+            ),
+            func.coalesce(func.sum(Document.chunk_count), 0),
+        ).where(Document.knowledge_base_id == knowledge_base_id)
+        document_count, ready_count, processing_count, failed_count, total_chunk_count = (
+            self._session.execute(statement).one()
+        )
+        return KnowledgeBaseStatsResult(
+            document_count=document_count,
+            ready_document_count=ready_count,
+            processing_document_count=processing_count,
+            failed_document_count=failed_count,
+            total_chunk_count=total_chunk_count,
+            vector_count=vector_store_factory(knowledge_base_id).count(),
+        )
 
     def update(
         self,

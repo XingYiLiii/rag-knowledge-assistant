@@ -24,3 +24,12 @@ class DocumentRead(BaseModel):
     error_message: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class DocumentPage(BaseModel):
+    """Paginated documents scoped to one knowledge base."""
+
+    items: list[DocumentRead]
+    page: int
+    page_size: int
+    total: int

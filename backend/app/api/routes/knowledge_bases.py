@@ -1,5 +1,6 @@
 """Knowledge Base management endpoints."""
 
+from collections.abc import Callable
 from typing import Annotated
 from uuid import UUID
 
@@ -7,10 +8,18 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_database_session
-from app.schemas.knowledge_base import KnowledgeBaseCreate, KnowledgeBaseRead, KnowledgeBaseUpdate
+from app.api.routes.documents import get_vector_store_factory
+from app.rag.vector_store import ChromaVectorStore
+from app.schemas.knowledge_base import (
+    KnowledgeBaseCreate,
+    KnowledgeBaseRead,
+    KnowledgeBaseStatsRead,
+    KnowledgeBaseUpdate,
+)
 from app.services.knowledge_base_service import KnowledgeBaseService
 
 router = APIRouter(prefix="/knowledge-bases", tags=["knowledge-bases"])
+VectorStoreFactory = Callable[[UUID], ChromaVectorStore]
 
 
 def get_knowledge_base_service(
@@ -35,6 +44,16 @@ def list_knowledge_bases(
 ) -> list[KnowledgeBaseRead]:
     """List knowledge bases with document counts."""
     return service.list()
+
+
+@router.get("/{knowledge_base_id}/stats", response_model=KnowledgeBaseStatsRead)
+def get_knowledge_base_stats(
+    knowledge_base_id: UUID,
+    service: Annotated[KnowledgeBaseService, Depends(get_knowledge_base_service)],
+    vector_store_factory: Annotated[VectorStoreFactory, Depends(get_vector_store_factory)],
+) -> KnowledgeBaseStatsRead:
+    """Return document lifecycle totals and the isolated Chroma vector count."""
+    return service.stats(knowledge_base_id, vector_store_factory=vector_store_factory)
 
 
 @router.get("/{knowledge_base_id}", response_model=KnowledgeBaseRead)
@@ -66,6 +85,6 @@ def delete_knowledge_base(
     knowledge_base_id: UUID,
     service: Annotated[KnowledgeBaseService, Depends(get_knowledge_base_service)],
 ) -> Response:
-    """Delete a knowledge base and its related data."""
+    """Delete a knowledge base and rely on ORM/database cascades for related data."""
     service.delete(knowledge_base_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -58,3 +58,14 @@ class KnowledgeBaseRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     document_count: int
+
+
+class KnowledgeBaseStatsRead(BaseModel):
+    """Document-processing and vector-store statistics for one knowledge base."""
+
+    document_count: int
+    ready_document_count: int
+    processing_document_count: int
+    failed_document_count: int
+    total_chunk_count: int
+    vector_count: int
