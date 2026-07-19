@@ -13,6 +13,7 @@ authors = [
   { name = "rag-knowledge-assistant contributors" },
 ]
 dependencies = [
+  "chromadb>=1.0,<2.0",
   "fastapi>=0.115,<1.0",
   "langchain-core>=0.3,<2.0",
   "langchain-text-splitters>=0.3,<2.0",

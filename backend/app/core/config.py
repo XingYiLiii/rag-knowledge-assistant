@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     embedding_api_key: SecretStr | None = None
     embedding_model: str = "text-embedding-3-small"
     embedding_timeout_seconds: float = Field(default=20.0, gt=0)
+    chroma_persist_directory: Path = Path("./data/chroma")
 
     model_config = SettingsConfigDict(
         env_file=".env",
