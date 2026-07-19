@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     chroma_persist_directory: Path = Path("./data/chroma")
     retrieval_top_k: int = Field(default=4, gt=0, le=100)
     retrieval_score_threshold: float = Field(default=0.35, ge=-1.0, le=1.0)
+    context_max_length: int = Field(default=6000, gt=0)
 
     model_config = SettingsConfigDict(
         env_file=".env",
