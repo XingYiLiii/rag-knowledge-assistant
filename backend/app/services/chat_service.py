@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import ApplicationError
 from app.database.models import KnowledgeBase
+from app.rag.citations import Citation, build_citations
 from app.rag.context_builder import ContextBuilder, ContextBuildResult
 from app.rag.prompts import build_grounded_messages
 from app.rag.providers import ChatMessage, ChatProvider, ChatResult
@@ -34,10 +35,11 @@ class ChatServiceResult:
     model: str | None
     latency_ms: float
     used_chunks: int
+    citations: list[Citation]
 
 
 class ChatService:
-    """Coordinate retrieval, grounding, and non-streaming model generation."""
+    """Coordinate retrieval, grounding, citations, and non-streaming model generation."""
 
     def __init__(
         self,
@@ -53,27 +55,18 @@ class ChatService:
         self._chat_provider_factory = chat_provider_factory
 
     def answer(self, *, knowledge_base_id: UUID, question: str) -> ChatServiceResult:
-        """Generate one answer from evidence in the specified knowledge base only."""
+        """Generate one answer and citations from evidence in the selected knowledge base."""
         self._ensure_knowledge_base_exists(knowledge_base_id)
         started_at = time.perf_counter()
         chunks = self._retrieve(knowledge_base_id, question)
         if not chunks:
-            return ChatServiceResult(
-                answer=NO_RELEVANT_KNOWLEDGE_ANSWER,
-                model=None,
-                latency_ms=_elapsed_ms(started_at),
-                used_chunks=0,
-            )
+            return self._no_knowledge_result(started_at)
 
         context_result = self._build_context(chunks, knowledge_base_id)
         if not context_result.chunks or not context_result.text:
-            return ChatServiceResult(
-                answer=NO_RELEVANT_KNOWLEDGE_ANSWER,
-                model=None,
-                latency_ms=_elapsed_ms(started_at),
-                used_chunks=0,
-            )
+            return self._no_knowledge_result(started_at)
 
+        citations = build_citations(context_result.chunks)
         messages = build_grounded_messages(question=question, context=context_result.text)
         chat_result = self._generate(messages, knowledge_base_id)
         return ChatServiceResult(
@@ -81,6 +74,7 @@ class ChatService:
             model=chat_result.model,
             latency_ms=_elapsed_ms(started_at),
             used_chunks=len(context_result.chunks),
+            citations=citations,
         )
 
     def _ensure_knowledge_base_exists(self, knowledge_base_id: UUID) -> None:
@@ -137,6 +131,16 @@ class ChatService:
                 message="The answer could not be generated.",
                 status_code=502,
             ) from exc
+
+    @staticmethod
+    def _no_knowledge_result(started_at: float) -> ChatServiceResult:
+        return ChatServiceResult(
+            answer=NO_RELEVANT_KNOWLEDGE_ANSWER,
+            model=None,
+            latency_ms=_elapsed_ms(started_at),
+            used_chunks=0,
+            citations=[],
+        )
 
 
 def _elapsed_ms(started_at: float) -> float:

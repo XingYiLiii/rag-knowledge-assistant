@@ -170,6 +170,7 @@ def test_chat_without_retrieval_results_skips_llm(
         "model": None,
         "latency_ms": response.json()["latency_ms"],
         "used_chunks": 0,
+        "citations": [],
     }
     assert chat_provider.calls == []
 

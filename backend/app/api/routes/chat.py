@@ -10,7 +10,7 @@ from app.core.config import get_settings
 from app.rag.chat_provider import create_chat_provider
 from app.rag.context_builder import ContextBuilder
 from app.rag.retriever import create_retriever
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.chat import ChatRequest, ChatResponse, CitationRead
 from app.services.chat_service import ChatService
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -44,4 +44,5 @@ def chat(
         model=result.model,
         latency_ms=result.latency_ms,
         used_chunks=result.used_chunks,
+        citations=[CitationRead(**citation.__dict__) for citation in result.citations],
     )

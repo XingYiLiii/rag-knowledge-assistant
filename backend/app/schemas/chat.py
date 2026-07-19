@@ -21,6 +21,19 @@ class ChatRequest(BaseModel):
         return normalized_value
 
 
+class CitationRead(BaseModel):
+    """A source snapshot for one chunk used to ground the returned answer."""
+
+    citation_id: int = Field(ge=1)
+    chunk_id: str
+    document_id: str
+    document_name: str
+    page_number: int | None
+    section_title: str | None
+    score: float
+    matched_text: str
+
+
 class ChatResponse(BaseModel):
     """The final answer and safe request-level RAG execution metadata."""
 
@@ -28,3 +41,4 @@ class ChatResponse(BaseModel):
     model: str | None
     latency_ms: float = Field(ge=0)
     used_chunks: int = Field(ge=0)
+    citations: list[CitationRead]
