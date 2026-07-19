@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}History · RAG Knowledge Assistant{% endblock %}
+{% block title %}对话历史 | RAG 知识库助手{% endblock %}
 {% block page %}history{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Conversation history</p>
-      <h1>Review saved RAG answers</h1>
-      <p class="muted">Citation snapshots remain attached to assistant messages.</p>
+      <p class="eyebrow">对话历史</p>
+      <h1>查看已保存的 RAG 回答</h1>
+      <p class="muted">引用快照会保留在助手消息中。</p>
     </div>
   </section>
 
   <section class="history-layout">
     <aside class="card history-sidebar">
       <label>
-        Knowledge base
+        知识库
         <select id="history-knowledge-base" required></select>
       </label>
       <div id="conversation-list" class="conversation-list" aria-live="polite"></div>
     </aside>
     <section class="card history-panel" aria-labelledby="history-heading">
-      <h2 id="history-heading">Messages</h2>
+      <h2 id="history-heading">消息</h2>
       <p id="page-message" class="page-message" role="status"></p>
       <div id="history-messages" class="chat-messages" aria-live="polite"></div>
     </section>

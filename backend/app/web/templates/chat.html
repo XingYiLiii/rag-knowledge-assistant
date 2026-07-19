@@ -1,39 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}Chat · RAG Knowledge Assistant{% endblock %}
+{% block title %}智能问答 | RAG 知识库助手{% endblock %}
 {% block page %}chat{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Grounded chat</p>
-      <h1>Ask your knowledge base</h1>
-      <p class="muted">Answers use retrieved evidence and include expandable source snapshots.</p>
+      <p class="eyebrow">基于证据的问答</p>
+      <h1>向你的知识库提问</h1>
+      <p class="muted">回答基于检索到的证据生成，并附带可展开的引用快照。</p>
     </div>
   </section>
 
   <section class="chat-layout">
     <aside class="card chat-controls">
       <label>
-        Knowledge base
+        知识库
         <select id="chat-knowledge-base" required></select>
       </label>
       <label>
-        Conversation
+        对话
         <select id="chat-conversation"></select>
       </label>
-      <button id="new-conversation" class="button-secondary" type="button">New conversation</button>
-      <a class="text-link" href="/history">View full history</a>
+      <button id="new-conversation" class="button-secondary" type="button">新建对话</button>
+      <a class="text-link" href="/history">查看完整历史记录</a>
     </aside>
 
     <section class="card chat-panel" aria-labelledby="chat-heading">
-      <h2 id="chat-heading">Conversation</h2>
+      <h2 id="chat-heading">对话</h2>
       <p id="page-message" class="page-message" role="status"></p>
       <div id="chat-messages" class="chat-messages" aria-live="polite"></div>
       <form id="chat-form" class="chat-form">
-        <label class="sr-only" for="chat-question">Question</label>
-        <textarea id="chat-question" maxlength="2000" placeholder="Ask a question about this knowledge base…" required></textarea>
-        <button type="submit">Send</button>
+        <label class="sr-only" for="chat-question">问题</label>
+        <textarea id="chat-question" maxlength="2000" placeholder="请输入关于当前知识库的问题…" required></textarea>
+        <button type="submit">发送</button>
       </form>
     </section>
   </section>

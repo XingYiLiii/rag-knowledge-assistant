@@ -1,5 +1,11 @@
 const apiBase = "/api/v1";
 const chatState = { conversationId: null };
+const documentStatusLabels = {
+  pending: "等待处理",
+  processing: "处理中",
+  ready: "已完成",
+  failed: "失败",
+};
 
 function pageMessage(text = "", isSuccess = false) {
   const target = document.querySelector("#page-message");
@@ -9,14 +15,14 @@ function pageMessage(text = "", isSuccess = false) {
 }
 
 function showError(error) {
-  pageMessage(error instanceof Error ? error.message : "Request failed.");
+  pageMessage(error instanceof Error ? error.message : "请求失败。");
 }
 
 async function request(path, options = {}) {
   const response = await fetch(`${apiBase}${path}`, options);
   if (response.status === 204) return null;
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error?.message || "Request failed.");
+  if (!response.ok) throw new Error(payload.error?.message || "请求失败。");
   return payload;
 }
 
@@ -33,8 +39,8 @@ function knowledgeBaseCard(knowledgeBase) {
   link.href = `/knowledge-bases/${knowledgeBase.id}`;
   link.append(
     textElement("h3", knowledgeBase.name),
-    textElement("p", knowledgeBase.description || "No description", "muted"),
-    textElement("p", `${knowledgeBase.document_count} document(s)`),
+    textElement("p", knowledgeBase.description || "暂无描述", "muted"),
+    textElement("p", `${knowledgeBase.document_count} 个文档`),
   );
   return link;
 }
@@ -45,7 +51,7 @@ async function loadKnowledgeBases() {
   const knowledgeBases = await request("/knowledge-bases");
   list.replaceChildren();
   if (!knowledgeBases.length) {
-    list.append(textElement("p", "No knowledge bases yet.", "muted"));
+    list.append(textElement("p", "暂无知识库。", "muted"));
     return;
   }
   knowledgeBases.forEach((item) => list.append(knowledgeBaseCard(item)));
@@ -86,7 +92,8 @@ function documentRow(documentItem) {
   cells.forEach((value, index) => {
     const cell = document.createElement("td");
     if (index === 2) {
-      const badge = textElement("span", value, `status status-${value}`);
+      const label = documentStatusLabels[value] ?? value;
+      const badge = textElement("span", label, `status status-${value}`);
       cell.append(badge);
     } else {
       cell.textContent = value;
@@ -95,15 +102,14 @@ function documentRow(documentItem) {
   });
   const actionCell = document.createElement("td");
   actionCell.className = "actions";
-  const reindex = textElement("button", "Reindex", "button-secondary button-small");
+  const reindex = textElement("button", "重新索引", "button-secondary button-small");
   reindex.addEventListener("click", () => reindexDocument(documentItem.id));
-  const remove = textElement("button", "Delete", "button-danger button-small");
+  const remove = textElement("button", "删除", "button-danger button-small");
   remove.addEventListener("click", () => deleteDocument(documentItem.id));
   actionCell.append(reindex, remove);
   row.append(actionCell);
   return row;
 }
-
 function currentKnowledgeBaseId() {
   return document.querySelector("[data-knowledge-base-id]")?.dataset.knowledgeBaseId;
 }
@@ -116,7 +122,7 @@ async function loadKnowledgeBaseDetail() {
     request(`/knowledge-bases/${knowledgeBaseId}/documents?page=1&page_size=100`),
   ]);
   document.querySelector("#knowledge-base-name").textContent = knowledgeBase.name;
-  document.querySelector("#knowledge-base-description").textContent = knowledgeBase.description || "No description";
+  document.querySelector("#knowledge-base-description").textContent = knowledgeBase.description || "暂无描述";
   const list = document.querySelector("#document-list");
   list.replaceChildren(...documentPage.items.map(documentRow));
 }
@@ -130,15 +136,15 @@ async function uploadDocument(event) {
   formData.append("file", input.files[0]);
   await request(`/knowledge-bases/${knowledgeBaseId}/documents`, { method: "POST", body: formData });
   input.value = "";
-  pageMessage("Upload accepted. Document is processing in the background.", true);
+  pageMessage("上传成功，文档正在后台处理中。", true);
   await loadKnowledgeBaseDetail();
 }
 
 async function deleteDocument(documentId) {
-  if (!window.confirm("Delete this document and its indexed vectors?")) return;
+  if (!window.confirm("确定删除该文档及其已索引的向量吗？")) return;
   try {
     await request(`/documents/${documentId}`, { method: "DELETE" });
-    pageMessage("Document deleted.", true);
+    pageMessage("文档已删除。", true);
     await loadKnowledgeBaseDetail();
   } catch (error) {
     showError(error);
@@ -148,7 +154,7 @@ async function deleteDocument(documentId) {
 async function reindexDocument(documentId) {
   try {
     await request(`/documents/${documentId}/reindex`, { method: "POST" });
-    pageMessage("Document reindexing started.", true);
+    pageMessage("文档已开始重新索引。", true);
     await loadKnowledgeBaseDetail();
   } catch (error) {
     showError(error);
@@ -168,7 +174,7 @@ function initKnowledgeBaseDetailPage() {
 function populateKnowledgeBaseSelect(select, knowledgeBases) {
   select.replaceChildren();
   if (!knowledgeBases.length) {
-    const option = new Option("No knowledge bases available", "");
+    const option = new Option("暂无可用知识库", "");
     option.disabled = true;
     option.selected = true;
     select.append(option);
@@ -183,9 +189,9 @@ function renderCitation(citation) {
   const details = document.createElement("details");
   details.className = "citation-card";
   const summary = document.createElement("summary");
-  const locator = citation.page_number ? `page ${citation.page_number}` : citation.section_title || "chunk";
-  summary.textContent = `[${citation.citation_id}] ${citation.document_name} · ${locator}`;
-  const metadata = textElement("p", `Score: ${Number(citation.score).toFixed(3)}`, "muted");
+  const locator = citation.page_number ? `第 ${citation.page_number} 页` : citation.section_title || "切片";
+  summary.textContent = `[${citation.citation_id}] ${citation.document_name} ｜ ${locator}`;
+  const metadata = textElement("p", `匹配分数：${Number(citation.score).toFixed(3)}`, "muted");
   const matched = document.createElement("pre");
   matched.className = "matched-text";
   matched.textContent = citation.matched_text;
@@ -196,12 +202,12 @@ function renderCitation(citation) {
 function renderChatMessage(message) {
   const article = document.createElement("article");
   article.className = `chat-message chat-message-${message.role}`;
-  article.append(textElement("p", message.role === "assistant" ? "Assistant" : "You", "message-role"));
+  article.append(textElement("p", message.role === "assistant" ? "助手" : "你", "message-role"));
   article.append(textElement("p", message.content, "message-content"));
   if (message.citations?.length) {
     const citations = document.createElement("div");
     citations.className = "citation-list";
-    citations.append(textElement("h3", "Sources", "citation-heading"));
+    citations.append(textElement("h3", "引用来源", "citation-heading"));
     message.citations.forEach((citation) => citations.append(renderCitation(citation)));
     article.append(citations);
   }
@@ -211,7 +217,7 @@ function renderChatMessage(message) {
 function renderMessages(target, messages) {
   target.replaceChildren();
   if (!messages.length) {
-    target.append(textElement("p", "No messages yet.", "muted"));
+    target.append(textElement("p", "暂无消息。", "muted"));
     return;
   }
   messages.forEach((message) => target.append(renderChatMessage(message)));
@@ -219,10 +225,10 @@ function renderMessages(target, messages) {
 
 async function loadConversationOptions(knowledgeBaseId, select) {
   const conversations = await request(`/knowledge-bases/${knowledgeBaseId}/conversations`);
-  select.replaceChildren(new Option("New conversation", ""));
+  select.replaceChildren(new Option("新建对话", ""));
   conversations.forEach((conversation) => {
     const createdAt = new Date(conversation.created_at).toLocaleString();
-    select.append(new Option(`Conversation · ${createdAt}`, conversation.id));
+    select.append(new Option(`对话 ｜ ${createdAt}`, conversation.id));
   });
   return conversations;
 }
@@ -233,7 +239,7 @@ async function createConversation(knowledgeBaseId, select) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ knowledge_base_id: knowledgeBaseId }),
   });
-  const option = new Option("Current conversation", conversation.id);
+  const option = new Option("当前对话", conversation.id);
   select.append(option);
   select.value = conversation.id;
   chatState.conversationId = conversation.id;
@@ -254,7 +260,7 @@ async function initChatPage() {
   const knowledgeBases = await request("/knowledge-bases");
   populateKnowledgeBaseSelect(knowledgeBaseSelect, knowledgeBases);
   if (!knowledgeBases.length) {
-    pageMessage("Create a knowledge base before starting a chat.");
+    pageMessage("请先创建知识库，再开始智能问答。");
     return;
   }
 
@@ -277,7 +283,7 @@ async function initChatPage() {
     chatState.conversationId = null;
     conversationSelect.value = "";
     renderMessages(messageList, []);
-    pageMessage("A new conversation will be created when you send a question.", true);
+    pageMessage("发送问题后将自动创建新对话。", true);
   });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -299,7 +305,7 @@ async function initChatPage() {
       messageList.append(renderChatMessage({ role: "user", content: value }));
       messageList.append(renderChatMessage({ role: "assistant", content: response.answer, citations: response.citations }));
       question.value = "";
-      pageMessage(`Answered with ${response.used_chunks} source chunk(s).`, true);
+      pageMessage(`已基于 ${response.used_chunks} 个来源切片生成回答。`, true);
     } catch (error) {
       showError(error);
     }
@@ -322,7 +328,7 @@ async function initHistoryPage() {
   const knowledgeBases = await request("/knowledge-bases");
   populateKnowledgeBaseSelect(knowledgeBaseSelect, knowledgeBases);
   if (!knowledgeBases.length) {
-    pageMessage("No knowledge bases available.");
+    pageMessage("暂无可用知识库。");
     return;
   }
 
@@ -331,7 +337,7 @@ async function initHistoryPage() {
     conversationList.replaceChildren();
     renderMessages(messageList, []);
     if (!conversations.length) {
-      conversationList.append(textElement("p", "No saved conversations.", "muted"));
+      conversationList.append(textElement("p", "暂无已保存的对话。", "muted"));
       return;
     }
     conversations.forEach((conversation) => {

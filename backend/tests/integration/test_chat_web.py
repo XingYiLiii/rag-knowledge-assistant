@@ -16,7 +16,7 @@ def test_chat_page_renders_chat_inputs_and_citation_region() -> None:
     assert 'id="chat-conversation"' in response.text
     assert 'id="chat-question"' in response.text
     assert 'id="chat-messages"' in response.text
-    assert "expandable source snapshots" in response.text
+    assert "可展开的引用快照" in response.text
 
 
 def test_history_page_renders_knowledge_base_and_message_regions() -> None:
@@ -29,7 +29,7 @@ def test_history_page_renders_knowledge_base_and_message_regions() -> None:
     assert 'id="history-knowledge-base"' in response.text
     assert 'id="conversation-list"' in response.text
     assert 'id="history-messages"' in response.text
-    assert "Citation snapshots" in response.text
+    assert "引用快照" in response.text
 
 
 def test_chat_script_contains_safe_citation_and_history_rendering() -> None:
@@ -43,3 +43,7 @@ def test_chat_script_contains_safe_citation_and_history_rendering() -> None:
     assert "createElement" in response.text
     assert "innerHTML" not in response.text
     assert "/conversations" in response.text
+    assert 'pending: "等待处理"' in response.text
+    assert 'processing: "处理中"' in response.text
+    assert 'ready: "已完成"' in response.text
+    assert 'failed: "失败"' in response.text

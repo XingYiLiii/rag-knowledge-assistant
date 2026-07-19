@@ -14,7 +14,7 @@ def test_knowledge_base_management_page_renders_key_elements() -> None:
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "RAG Knowledge Assistant" in response.text
+    assert "RAG 知识库助手" in response.text
     assert 'id="create-knowledge-base-form"' in response.text
     assert 'id="knowledge-base-list"' in response.text
     assert "/static/styles.css" in response.text

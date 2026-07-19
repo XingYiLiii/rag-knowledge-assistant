@@ -1,36 +1,36 @@
 {% extends "base.html" %}
 
-{% block title %}Knowledge Bases · RAG Knowledge Assistant{% endblock %}
+{% block title %}知识库 | RAG 知识库助手{% endblock %}
 {% block page %}knowledge-bases{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Knowledge bases</p>
-      <h1>Manage your RAG knowledge</h1>
-      <p class="muted">Create a knowledge base, then upload source documents for indexing.</p>
+      <p class="eyebrow">知识库</p>
+      <h1>管理你的 RAG 知识</h1>
+      <p class="muted">创建知识库后，上传源文档并建立索引。</p>
     </div>
   </section>
 
   <section class="card" aria-labelledby="create-heading">
-    <h2 id="create-heading">Create knowledge base</h2>
+    <h2 id="create-heading">创建知识库</h2>
     <form id="create-knowledge-base-form" class="stack-form">
       <label>
-        Name
+        名称
         <input id="knowledge-base-name" name="name" maxlength="120" required>
       </label>
       <label>
-        Description <span class="muted">(optional)</span>
+        描述 <span class="muted">（可选）</span>
         <textarea id="knowledge-base-description" name="description" maxlength="2000"></textarea>
       </label>
-      <button type="submit">Create knowledge base</button>
+      <button type="submit">创建知识库</button>
     </form>
   </section>
 
   <section aria-labelledby="knowledge-bases-heading">
     <div class="section-heading">
-      <h2 id="knowledge-bases-heading">Existing knowledge bases</h2>
-      <button id="refresh-knowledge-bases" class="button-secondary" type="button">Refresh</button>
+      <h2 id="knowledge-bases-heading">已有知识库</h2>
+      <button id="refresh-knowledge-bases" class="button-secondary" type="button">刷新</button>
     </div>
     <p id="page-message" class="page-message" role="status"></p>
     <div id="knowledge-base-list" class="card-grid" aria-live="polite"></div>
