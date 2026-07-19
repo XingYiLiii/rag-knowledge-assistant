@@ -4,13 +4,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+MAX_QUESTION_LENGTH = 2_000
+
 
 class ChatRequest(BaseModel):
-    """A question scoped to exactly one knowledge base."""
+    """A question scoped to exactly one knowledge base and optional conversation."""
 
     knowledge_base_id: UUID
     conversation_id: UUID | None = None
-    question: str = Field(min_length=1, max_length=4000)
+    question: str = Field(min_length=1, max_length=MAX_QUESTION_LENGTH)
 
     @field_validator("question")
     @classmethod

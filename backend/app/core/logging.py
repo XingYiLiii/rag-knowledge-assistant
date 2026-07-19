@@ -2,12 +2,18 @@
 
 import json
 import logging
+import re
 import sys
 from typing import Any
 
+_SENSITIVE_VALUE_PATTERNS = (
+    re.compile(r"(?i)(authorization\s*[:=]\s*bearer\s+)([^\s,;]+)"),
+    re.compile(r"(?i)((?:api[_-]?key|token|secret)\s*[:=]\s*)([^\s,;]+)"),
+)
+
 
 class JsonFormatter(logging.Formatter):
-    """Format application logs as machine-readable JSON without exception payloads."""
+    """Format application logs as machine-readable JSON without sensitive payloads."""
 
     context_fields = (
         "request_id",
@@ -20,12 +26,12 @@ class JsonFormatter(logging.Formatter):
     )
 
     def format(self, record: logging.LogRecord) -> str:
-        """Serialize safe log metadata into one JSON record."""
+        """Serialize whitelisted metadata and a redacted log message into JSON."""
         payload: dict[str, Any] = {
             "timestamp": self.formatTime(record, datefmt="%Y-%m-%dT%H:%M:%S%z"),
             "level": record.levelname,
             "logger": record.name,
-            "message": record.getMessage(),
+            "message": redact_sensitive_values(record.getMessage()),
         }
         for field in self.context_fields:
             value = getattr(record, field, None)
@@ -33,6 +39,14 @@ class JsonFormatter(logging.Formatter):
                 payload[field] = value
 
         return json.dumps(payload, ensure_ascii=False, default=str)
+
+
+def redact_sensitive_values(message: str) -> str:
+    """Redact common credential representations if they reach a log message."""
+    redacted_message = message
+    for pattern in _SENSITIVE_VALUE_PATTERNS:
+        redacted_message = pattern.sub(r"\1[REDACTED]", redacted_message)
+    return redacted_message
 
 
 def configure_logging() -> None:
