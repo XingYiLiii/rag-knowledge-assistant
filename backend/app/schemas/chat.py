@@ -9,6 +9,7 @@ class ChatRequest(BaseModel):
     """A question scoped to exactly one knowledge base."""
 
     knowledge_base_id: UUID
+    conversation_id: UUID | None = None
     question: str = Field(min_length=1, max_length=4000)
 
     @field_validator("question")

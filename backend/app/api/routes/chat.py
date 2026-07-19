@@ -37,6 +37,7 @@ def chat(
     """Answer one question using evidence retrieved from the selected knowledge base."""
     result = service.answer(
         knowledge_base_id=payload.knowledge_base_id,
+        conversation_id=payload.conversation_id,
         question=payload.question,
     )
     return ChatResponse(
