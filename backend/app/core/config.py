@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     embedding_api_key: SecretStr | None = None
     embedding_model: str = "text-embedding-3-small"
     embedding_timeout_seconds: float = Field(default=20.0, gt=0)
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_api_key: SecretStr | None = None
+    llm_model: str = "gpt-4o-mini"
+    llm_timeout_seconds: float = Field(default=30.0, gt=0)
+    llm_temperature: float = Field(default=0.2, ge=0.0, le=2.0)
     chroma_persist_directory: Path = Path("./data/chroma")
     retrieval_top_k: int = Field(default=4, gt=0, le=100)
     retrieval_score_threshold: float = Field(default=0.35, ge=-1.0, le=1.0)
